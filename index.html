@@ -1,0 +1,1016 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Warony – Kunden · Auftrag-Dashboard (Breiteres Popup)</title>
+
+  <style>
+    :root{
+      --bg:#f6f8fc; --text:#0f172a; --muted:#64748b; --line:#e6ebf5;
+      --brand:#106f5f;
+      --shadow:0 18px 50px rgba(15,23,42,.12);
+      --shadow-sm:0 8px 22px rgba(15,23,42,.06);
+      --radius:18px; --radius-lg:26px;
+      --font: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;font-family:var(--font);color:var(--text);
+      background:
+        radial-gradient(1200px 600px at 30% -10%, rgba(16,111,95,.12), transparent 60%),
+        radial-gradient(900px 500px at 90% 10%, rgba(16,111,95,.10), transparent 55%),
+        var(--bg);
+    }
+
+    /* Layout */
+    .app{display:grid;grid-template-columns:280px 1fr 360px;gap:18px;padding:18px;min-height:100vh}
+    @media (max-width:1200px){.app{grid-template-columns:260px 1fr}.right{display:none}}
+    @media (max-width:900px){.app{grid-template-columns:1fr}.left{position:sticky;top:12px;z-index:5}}
+
+    .panel{
+      background:rgba(255,255,255,.72);
+      border:1px solid rgba(230,235,245,.9);
+      backdrop-filter: blur(10px);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow-sm);
+      overflow:hidden;
+    }
+
+    /* Left */
+    .left .brand{display:flex;align-items:center;gap:10px;padding:16px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,.65))}
+    .logo{width:40px;height:40px;border-radius:14px;background:linear-gradient(135deg,var(--brand),#0b3d35);box-shadow:0 12px 30px rgba(16,111,95,.25);display:grid;place-items:center;color:#fff;font-weight:900}
+    .brand h1{margin:0;font-size:14px;font-weight:900;line-height:1.1}
+    .brand p{margin:2px 0 0;font-size:12px;color:var(--muted)}
+    .nav{padding:10px;display:flex;flex-direction:column;gap:6px}
+    .nav a{text-decoration:none;color:var(--text);padding:10px 12px;border-radius:14px;display:flex;align-items:center;gap:10px;transition:.15s ease}
+    .nav a:hover{background:rgba(16,111,95,.08)}
+    .nav a.active{background:rgba(16,111,95,.12);border:1px solid rgba(16,111,95,.20)}
+    .nav .dot{width:10px;height:10px;border-radius:999px;background:rgba(100,116,139,.35)}
+    .nav a.active .dot{background:var(--brand)}
+    .hint{margin:10px;padding:12px;border-radius:16px;border:1px solid rgba(230,235,245,.9);background:linear-gradient(180deg,rgba(16,111,95,.08),rgba(255,255,255,.6));color:var(--muted);font-size:12px}
+
+    /* Main topbar */
+    .main{padding:0}
+    .topbar{
+      display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
+      padding:18px 18px 12px;border-bottom:1px solid var(--line);
+      background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,.6));
+      position:sticky;top:0;z-index:10;
+    }
+    .crumb{color:var(--muted);font-size:12px}
+    .title{margin:6px 0 0;font-size:22px;letter-spacing:-.3px}
+    .subtitle{margin:6px 0 0;color:var(--muted);font-size:13px;max-width:840px}
+
+    .actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end;margin-top:2px}
+    .btn{
+      border:1px solid rgba(230,235,245,.9);background:rgba(255,255,255,.85);
+      padding:10px 12px;border-radius:14px;font-weight:950;font-size:13px;color:var(--text);
+      cursor:pointer;transition:.15s ease;display:flex;align-items:center;gap:8px;
+      box-shadow:0 10px 25px rgba(15,23,42,.05);height:40px;
+    }
+    .btn:hover{transform:translateY(-1px);box-shadow:0 14px 30px rgba(15,23,42,.07)}
+    .btn.primary{
+      border:1px solid rgba(16,111,95,.25);
+      background:linear-gradient(135deg,rgba(16,111,95,.98),rgba(11,61,53,.92));
+      color:#fff;box-shadow:0 16px 34px rgba(16,111,95,.20);
+    }
+    .btn.ghost{background:rgba(255,255,255,.55);box-shadow:none}
+    .ic{width:14px;height:14px;display:inline-block;border-radius:4px;background:rgba(100,116,139,.25)}
+    .ic.brand{background:rgba(16,111,95,.32)}
+    .btn.primary .ic{background:rgba(255,255,255,.26)}
+
+    /* Dropdown */
+    .dropdown{position:relative}
+    .menu{
+      position:absolute;right:0;top:46px;width:240px;
+      background:rgba(255,255,255,.92);border:1px solid rgba(230,235,245,.95);
+      border-radius:16px;box-shadow:var(--shadow-sm);padding:8px;display:none;z-index:20;backdrop-filter:blur(10px);
+    }
+    .menu.open{display:block}
+    .menu button{width:100%;text-align:left;border:none;background:transparent;padding:10px;border-radius:12px;cursor:pointer;font-weight:950;color:var(--text);display:flex;align-items:center;gap:10px}
+    .menu button:hover{background:rgba(16,111,95,.08)}
+    .menu small{color:var(--muted);font-weight:850}
+
+    /* Content */
+    .content{padding:18px;display:flex;flex-direction:column;gap:14px}
+
+    /* Page tabs */
+    .tabs{
+      display:flex;gap:8px;flex-wrap:wrap;padding:10px;
+      background:rgba(255,255,255,.65);border:1px solid rgba(230,235,245,.95);border-radius:16px
+    }
+    .tab{
+      border:1px solid rgba(230,235,245,.95);background:rgba(255,255,255,.85);
+      padding:9px 12px;border-radius:999px;font-weight:950;font-size:13px;color:var(--muted);
+      cursor:pointer;transition:.12s ease;display:flex;align-items:center;gap:8px;height:38px;
+    }
+    .tab .count{font-size:11px;color:var(--muted);background:rgba(15,23,42,.04);border:1px solid rgba(15,23,42,.06);padding:2px 8px;border-radius:999px;font-weight:950}
+    .tab.active{color:#fff;background:linear-gradient(135deg,rgba(16,111,95,.98),rgba(11,61,53,.92));border-color:rgba(16,111,95,.25)}
+    .tab.active .count{color:rgba(255,255,255,.9);background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.22)}
+    .tabpanel{display:none}
+    .tabpanel.active{display:block}
+
+    /* Table */
+    .table-wrap{border:1px solid rgba(230,235,245,.95);border-radius:var(--radius);background:rgba(255,255,255,.85);box-shadow:var(--shadow-sm);overflow:hidden}
+    .table-tools{
+      padding:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;
+      border-bottom:1px solid var(--line);
+      background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,.65));
+    }
+    .search{display:flex;align-items:center;gap:10px;background:rgba(15,23,42,.03);border:1px solid rgba(15,23,42,.06);padding:8px 10px;border-radius:999px;min-width:280px;flex:1;max-width:520px}
+    .search input{border:none;outline:none;background:transparent;width:100%;font-size:13px;color:var(--text)}
+    .select{border:1px solid rgba(230,235,245,.95);background:rgba(255,255,255,.9);border-radius:999px;padding:9px 12px;color:var(--muted);font-weight:950;font-size:13px;cursor:pointer;height:38px}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    thead th{text-align:left;padding:12px;color:var(--muted);font-size:12px;font-weight:950;background:rgba(246,248,252,.6);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:1}
+    tbody td{padding:12px;border-bottom:1px solid rgba(230,235,245,.8)}
+    tbody tr:hover{background:rgba(16,111,95,.04)}
+    .status{display:inline-flex;align-items:center;gap:8px;font-weight:950;color:var(--muted)}
+    .badge{width:10px;height:10px;border-radius:999px;background:rgba(100,116,139,.35)}
+    .badge.good{background:rgba(22,163,74,.75)}
+    .badge.warn{background:rgba(245,158,11,.85)}
+    .badge.bad{background:rgba(239,68,68,.85)}
+
+    .row-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+    .btn-mini{
+      padding:8px 10px;border-radius:12px;font-size:12px;font-weight:950;
+      border:1px solid rgba(230,235,245,.95);background:rgba(255,255,255,.9);cursor:pointer;transition:.12s ease;color:var(--text);height:34px;
+      display:inline-flex;align-items:center;gap:8px;
+    }
+    .btn-mini:hover{transform:translateY(-1px)}
+    .btn-mini.primary{color:#fff;border-color:rgba(16,111,95,.25);background:linear-gradient(135deg,rgba(16,111,95,.98),rgba(11,61,53,.92))}
+    .btn-mini.icon span{
+      display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:6px;
+      background:rgba(16,111,95,.14);border:1px solid rgba(16,111,95,.22);color:var(--brand);font-weight:950;font-size:11px
+    }
+    .btn-mini.primary.icon span{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.22);color:#fff}
+
+    /* Pagination */
+    .pager{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;border-top:1px solid var(--line);background:rgba(255,255,255,.70)}
+    .pager .info{color:var(--muted);font-size:12px;font-weight:950}
+    .pager .controls{display:flex;gap:8px;align-items:center}
+    .page{width:34px;height:34px;border-radius:12px;border:1px solid rgba(230,235,245,.95);background:rgba(255,255,255,.9);cursor:pointer;font-weight:950;color:var(--text)}
+    .page.active{color:#fff;border-color:rgba(16,111,95,.25);background:linear-gradient(135deg,rgba(16,111,95,.98),rgba(11,61,53,.92))}
+    .page:disabled{opacity:.5;cursor:not-allowed}
+
+    /* Right sidebar */
+    .right .box{margin:0;padding:14px}
+    .right .card{
+      border:1px solid rgba(230,235,245,.95);
+      background:rgba(255,255,255,.85);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow-sm);
+      padding:14px;
+    }
+    .right .card h3{margin:0;font-size:14px;font-weight:1000}
+    .right .card p{margin:6px 0 0;color:var(--muted);font-size:12px}
+
+    /* ===== MODAL ===== */
+    .modal-backdrop{
+      position:fixed;inset:0;background:rgba(15,23,42,.42);
+      display:none;align-items:center;justify-content:center;padding:18px;z-index:100;
+    }
+    .modal-backdrop.open{display:flex}
+
+    /* >>> WIDER POPUP HERE <<< */
+    .modal{
+      width:min(1500px,98vw);  /* was 1280px */
+      height:min(86vh,880px);
+      border-radius:var(--radius-lg);
+      background:rgba(255,255,255,.92);
+      border:1px solid rgba(230,235,245,.95);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      backdrop-filter: blur(14px);
+      display:flex;flex-direction:column;
+    }
+
+    .modal-head{
+      padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;
+      border-bottom:1px solid var(--line);
+      background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(255,255,255,.72));
+    }
+    .modal-head-left{display:flex;align-items:center;gap:12px;min-width:0}
+    .modal-avatar{
+      width:44px;height:44px;border-radius:18px;
+      background:rgba(16,111,95,.10);border:1px solid rgba(16,111,95,.22);
+      display:grid;place-items:center;color:var(--brand);font-weight:1000;flex:0 0 auto;
+    }
+    .modal-titles{min-width:0}
+    .modal-title{margin:0;font-size:14px;font-weight:1000}
+    .modal-sub{margin:2px 0 0;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:720px}
+
+    .modal-head-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .btn-dark{
+      height:40px;border-radius:14px;font-weight:1000;font-size:13px;cursor:pointer;
+      padding:10px 12px;display:flex;align-items:center;gap:8px;
+      border:1px solid rgba(16,111,95,.25);
+      background:linear-gradient(135deg,rgba(16,111,95,.98),rgba(11,61,53,.92));
+      color:#fff;box-shadow:0 16px 34px rgba(16,111,95,.18);
+    }
+    .btn-light{
+      height:40px;border-radius:14px;font-weight:1000;font-size:13px;cursor:pointer;
+      padding:10px 12px;display:flex;align-items:center;gap:8px;
+      border:1px solid rgba(230,235,245,.95);background:rgba(255,255,255,.85);color:var(--text);
+    }
+
+    /* >>> LEFT WORK AREA BIGGER <<< */
+    .modal-body{
+      flex:1;
+      display:grid;
+      grid-template-columns:1fr 300px; /* right smaller -> more space for tabs */
+      gap:12px;
+      padding:14px;
+      min-height:0;
+    }
+    @media (max-width:1100px){
+      .modal{height:min(90vh,920px)}
+      .modal-body{grid-template-columns:1fr}
+    }
+
+    .work-surface,.side-surface{
+      border:1px solid rgba(230,235,245,.95);border-radius:22px;background:rgba(255,255,255,.86);
+      box-shadow:var(--shadow-sm);overflow:hidden;display:flex;flex-direction:column;min-height:0;
+    }
+
+    .work-top{
+      padding:12px 12px 10px;border-bottom:1px solid var(--line);
+      background:rgba(246,248,252,.55);
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+    }
+
+    /* ===== Work Tabs: ALWAYS side by side, more readable ===== */
+    .work-tabs{
+      display:flex;
+      flex-wrap:nowrap !important;
+      white-space:nowrap;
+      gap:10px;
+      padding:8px;
+      border-radius:16px;
+      background:rgba(255,255,255,.65);
+      border:1px solid rgba(230,235,245,.95);
+
+      overflow-x:auto;
+      overflow-y:hidden;
+      -webkit-overflow-scrolling:touch;
+
+      scrollbar-width:none;
+      flex:1 1 auto;
+      max-width:100%;
+    }
+    .work-tabs::-webkit-scrollbar{display:none}
+
+    .work-tab{
+      flex:0 0 auto;
+      height:36px;
+      padding:8px 14px;
+      border-radius:999px;
+      border:1px solid rgba(230,235,245,.95);
+      background:rgba(255,255,255,.90);
+      color:var(--muted);
+      font-weight:1000;
+      font-size:13px;
+      cursor:pointer;
+      display:flex;align-items:center;gap:8px;
+      transition:.12s ease;
+    }
+    .work-tab.active{
+      color:#fff;border-color:rgba(16,111,95,.25);
+      background:linear-gradient(135deg,rgba(16,111,95,.98),rgba(11,61,53,.92));
+    }
+
+    .work-content{padding:12px;overflow:auto;min-height:0}
+
+    .grid-kv{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    @media (max-width:1100px){.grid-kv{grid-template-columns:repeat(2,1fr)}}
+    .kv{padding:10px;border-radius:16px;border:1px solid rgba(230,235,245,.9);background:rgba(246,248,252,.45)}
+    .kv .k{font-size:12px;color:var(--muted);font-weight:900}
+    .kv .v{margin-top:6px;font-size:13px;font-weight:1000}
+    .divider{height:1px;background:rgba(230,235,245,.95);margin:12px 0}
+
+    .pill{
+      font-size:11px;font-weight:1000;color:var(--muted);
+      padding:3px 10px;border-radius:999px;border:1px solid rgba(230,235,245,.9);
+      background:rgba(15,23,42,.03);display:inline-flex;align-items:center;gap:8px;white-space:nowrap;
+      flex:0 0 auto;
+    }
+    .pill .dot{width:10px;height:10px;border-radius:999px;background:rgba(100,116,139,.35)}
+    .pill.good .dot{background:rgba(22,163,74,.75)}
+    .pill.warn .dot{background:rgba(245,158,11,.85)}
+    .pill.bad .dot{background:rgba(239,68,68,.85)}
+
+    .item-card{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      padding:10px;border-radius:18px;border:1px solid rgba(230,235,245,.9);
+      background:rgba(246,248,252,.45);margin-bottom:10px;
+    }
+    .item-card:last-child{margin-bottom:0}
+    .file{
+      width:38px;height:38px;border-radius:16px;background:rgba(16,111,95,.10);
+      border:1px solid rgba(16,111,95,.22);display:grid;place-items:center;color:var(--brand);font-weight:1000;flex:0 0 auto;
+    }
+    .item-info strong{display:block;font-size:13px;font-weight:1000}
+    .item-info span{display:block;font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:640px}
+
+    .side-head{padding:12px;border-bottom:1px solid var(--line);background:rgba(246,248,252,.55);display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .side-head h4{margin:0;font-size:13px;font-weight:1000}
+    .side-body{padding:12px;overflow:auto;min-height:0}
+    .muted{color:var(--muted);font-size:12px}
+
+    .form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media (max-width:900px){.form{grid-template-columns:1fr}}
+    .field{padding:10px;border-radius:16px;border:1px solid rgba(230,235,245,.9);background:rgba(255,255,255,.78)}
+    .field label{display:block;font-size:12px;color:var(--muted);font-weight:900;margin-bottom:6px}
+    .field input,.field select,.field textarea{
+      width:100%;border:1px solid rgba(230,235,245,.95);border-radius:12px;padding:10px 10px;
+      font-weight:900;font-size:13px;outline:none;background:rgba(246,248,252,.55);color:var(--text);
+    }
+    .field textarea{min-height:96px;resize:vertical}
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <aside class="left panel">
+      <div class="brand">
+        <div class="logo">W</div>
+        <div>
+          <h1>Warony</h1>
+          <p>Kunden · Dashboard</p>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a href="#" class="active"><span class="dot"></span> Dashboard</a>
+        <a href="#"><span class="dot"></span> Billing</a>
+        <a href="#"><span class="dot"></span> Kunden</a>
+        <a href="#"><span class="dot"></span> Mitarbeiter</a>
+        <a href="#"><span class="dot"></span> Aufgaben</a>
+        <a href="#"><span class="dot"></span> Personal</a>
+        <a href="#"><span class="dot"></span> Kalender</a>
+        <a href="#"><span class="dot"></span> Inventar</a>
+        <a href="#"><span class="dot"></span> Einstellungen</a>
+      </nav>
+
+      <div class="hint">
+        Popup ist jetzt <strong>breiter</strong> und Tabs bleiben <strong>in einer Zeile</strong>.
+      </div>
+    </aside>
+
+    <main class="main panel">
+      <header class="topbar">
+        <div>
+          <div class="crumb">Warony · Kunden · <strong>Kunde</strong></div>
+          <h2 class="title">Testfirma (K000005)</h2>
+          <p class="subtitle">Öffne einen Auftrag → große Arbeitsfläche mit Tabs inkl. Termin, Monteur & Lager-Info.</p>
+        </div>
+
+        <div class="actions">
+          <button class="btn ghost" type="button"><span class="ic brand"></span> Aktualisieren</button>
+          <button class="btn" type="button"><span class="ic"></span> Bearbeiten</button>
+
+          <div class="dropdown">
+            <button class="btn primary" id="newBtn" type="button" aria-haspopup="menu" aria-expanded="false">
+              <span class="ic"></span> + Neu
+            </button>
+            <div class="menu" id="newMenu" role="menu" aria-labelledby="newBtn">
+              <button type="button" role="menuitem"><span class="ic brand"></span> Auftrag <small>anlegen</small></button>
+              <button type="button" role="menuitem"><span class="ic brand"></span> Bestellung <small>anlegen</small></button>
+              <button type="button" role="menuitem"><span class="ic brand"></span> Angebot <small>anlegen</small></button>
+              <button type="button" role="menuitem"><span class="ic brand"></span> Anfrage <small>anlegen</small></button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="content">
+        <div class="tabs" role="tablist" aria-label="Kunden-Objekte">
+          <button class="tab active" data-tab="auftraege" type="button">Aufträge <span class="count" id="countOrders">0</span></button>
+          <button class="tab" data-tab="bestellungen" type="button">Bestellungen <span class="count">8</span></button>
+          <button class="tab" data-tab="angebote" type="button">Angebote <span class="count">2</span></button>
+          <button class="tab" data-tab="anfragen" type="button">Anfragen <span class="count">5</span></button>
+        </div>
+
+        <div class="tabpanels">
+          <div class="tabpanel active" id="tab-auftraege">
+            <div class="table-wrap">
+              <div class="table-tools">
+                <div class="search">
+                  <span class="ic brand"></span>
+                  <input id="searchOrders" type="text" placeholder="Aufträge durchsuchen (Nr., Status, Betrag) …" />
+                </div>
+
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+                  <select id="statusFilter" class="select">
+                    <option value="all">Status: Alle</option>
+                    <option value="open">Offen</option>
+                    <option value="work">In Arbeit</option>
+                    <option value="done">Erledigt</option>
+                    <option value="late">Überfällig</option>
+                  </select>
+                  <button class="btn-mini primary icon" type="button"><span>+</span> Auftrag</button>
+                </div>
+              </div>
+
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:140px;">Nr.</th>
+                    <th>Datum</th>
+                    <th>Status</th>
+                    <th>Betrag</th>
+                    <th>Bestellungen (Status)</th>
+                    <th style="text-align:right;">Aktion</th>
+                  </tr>
+                </thead>
+                <tbody id="ordersBody"></tbody>
+              </table>
+
+              <div class="pager">
+                <div class="info" id="ordersInfo">—</div>
+                <div class="controls">
+                  <button class="page" id="prevPage" type="button">←</button>
+                  <button class="page active" id="page1" type="button">1</button>
+                  <button class="page" id="page2" type="button">2</button>
+                  <button class="page" id="nextPage" type="button">→</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tabpanel" id="tab-bestellungen"><div class="table-wrap" style="padding:14px;"><strong>Bestellungen</strong><div class="muted">Analog als Tabelle.</div></div></div>
+          <div class="tabpanel" id="tab-angebote"><div class="table-wrap" style="padding:14px;"><strong>Angebote</strong><div class="muted">Analog als Tabelle.</div></div></div>
+          <div class="tabpanel" id="tab-anfragen"><div class="table-wrap" style="padding:14px;"><strong>Anfragen</strong><div class="muted">Analog als Tabelle.</div></div></div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="right panel">
+      <div class="box">
+        <div class="card">
+          <h3>Neu im Auftrag</h3>
+          <p>Tabs: Termin, Monteur, Lager-Info (Wareneingang/-ausgang, Verzögerung, Schaden).</p>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ===== ORDER MODAL ===== -->
+  <div class="modal-backdrop" id="orderModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head">
+        <div class="modal-head-left">
+          <div class="modal-avatar">A</div>
+          <div class="modal-titles">
+            <p class="modal-title" id="modalTitle">Auftrag —</p>
+            <p class="modal-sub" id="modalSub">Arbeitsfläche: Übersicht · Termin · Monteur · Lager-Info · Bestellungen · Dokumente</p>
+          </div>
+        </div>
+
+        <div class="modal-head-actions">
+          <button class="btn-light" id="modalEdit" type="button"><span class="ic"></span> Bearbeiten</button>
+          <button class="btn-dark" id="modalSave" type="button"><span class="ic"></span> Speichern</button>
+          <button class="btn-light" id="closeModal" type="button"><span class="ic"></span> Schließen</button>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <div class="work-surface">
+          <div class="work-top">
+            <div class="work-tabs" role="tablist" aria-label="Auftrag Tabs">
+              <button class="work-tab active" data-wtab="overview" type="button">Übersicht</button>
+              <button class="work-tab" data-wtab="appointment" type="button">Termin</button>
+              <button class="work-tab" data-wtab="technician" type="button">Monteur</button>
+              <button class="work-tab" data-wtab="warehouse" type="button">Lager-Info</button>
+              <button class="work-tab" data-wtab="purchases" type="button">Bestellungen</button>
+              <button class="work-tab" data-wtab="docs" type="button">Dokumente</button>
+            </div>
+
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end; flex:0 0 auto;">
+              <span class="pill" id="modalStatusPill"><span class="dot"></span> Status</span>
+              <span class="pill" id="modalPurchasePill"><span class="dot"></span> Bestellungen</span>
+              <span class="pill" style="border-color:rgba(16,111,95,.22);background:rgba(16,111,95,.08);">
+                <span class="dot" style="background:rgba(16,111,95,.85)"></span> <span id="modalAmount">€ —</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="work-content">
+            <div class="wpanel" id="wtab-overview">
+              <div class="grid-kv">
+                <div class="kv"><div class="k">Auftragsnummer</div><div class="v" id="ovNr">—</div></div>
+                <div class="kv"><div class="k">Datum</div><div class="v" id="ovDate">—</div></div>
+                <div class="kv"><div class="k">Verantwortlich</div><div class="v" id="ovOwner">—</div></div>
+                <div class="kv"><div class="k">Bestellungen</div><div class="v" id="ovPurchasesCount">—</div></div>
+              </div>
+              <div class="divider"></div>
+              <div class="muted">Hier kannst du später Notizen / Statuswechsel / interne Infos platzieren.</div>
+            </div>
+
+            <div class="wpanel" id="wtab-appointment" style="display:none;">
+              <div style="font-weight:1000;">Termin</div>
+              <div class="muted" style="margin-top:6px;">Planung für Montage/Leistung inkl. Zeitfenster & Notizen.</div>
+              <div class="divider"></div>
+              <div class="form">
+                <div class="field"><label>Datum</label><input id="apDate" type="date" /></div>
+                <div class="field"><label>Startzeit</label><input id="apStart" type="time" /></div>
+                <div class="field"><label>Endzeit</label><input id="apEnd" type="time" /></div>
+                <div class="field"><label>Ort / Einsatzadresse</label><input id="apLocation" type="text" placeholder="Adresse …" /></div>
+                <div class="field" style="grid-column:1/-1;"><label>Notiz</label><textarea id="apNote" placeholder="Details …"></textarea></div>
+              </div>
+            </div>
+
+            <div class="wpanel" id="wtab-technician" style="display:none;">
+              <div style="font-weight:1000;">Zuweisung Monteur</div>
+              <div class="muted" style="margin-top:6px;">Monteur auswählen, Status der Zuweisung und kurze Anweisung.</div>
+              <div class="divider"></div>
+              <div class="form">
+                <div class="field">
+                  <label>Monteur</label>
+                  <select id="techName">
+                    <option value="">— auswählen —</option>
+                    <option value="ines">Ines</option>
+                    <option value="micha">Micha</option>
+                    <option value="rahel">Rahel</option>
+                    <option value="team-a">Team A</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Status</label>
+                  <select id="techStatus">
+                    <option value="planned">Geplant</option>
+                    <option value="assigned">Zugewiesen</option>
+                    <option value="onroute">Unterwegs</option>
+                    <option value="onsite">Vor Ort</option>
+                    <option value="done">Abgeschlossen</option>
+                  </select>
+                </div>
+                <div class="field" style="grid-column:1/-1;"><label>Arbeitsanweisung</label><textarea id="techNote" placeholder="Details …"></textarea></div>
+              </div>
+            </div>
+
+            <div class="wpanel" id="wtab-warehouse" style="display:none;">
+              <div style="font-weight:1000;">Lager-Info</div>
+              <div class="muted" style="margin-top:6px;">Wareneingang/-ausgang, Lieferverzögerung, Schaden an Ware.</div>
+              <div class="divider"></div>
+
+              <div class="form" style="margin-bottom:12px;">
+                <div class="field">
+                  <label>Typ</label>
+                  <select id="whType">
+                    <option value="incoming">Wareneingang</option>
+                    <option value="outgoing">Warenausgang</option>
+                    <option value="delay">Lieferverzögerung</option>
+                    <option value="damage">Schaden an der Ware</option>
+                  </select>
+                </div>
+                <div class="field"><label>Datum</label><input id="whDate" type="date" /></div>
+                <div class="field" style="grid-column:1/-1;"><label>Details</label><input id="whDetails" type="text" placeholder="Beschreibung …" /></div>
+              </div>
+
+              <button class="btn-mini primary icon" id="addWarehouseEvent" type="button" style="margin-bottom:12px;">
+                <span>+</span> Ereignis hinzufügen
+              </button>
+
+              <div id="warehouseList"></div>
+            </div>
+
+            <div class="wpanel" id="wtab-purchases" style="display:none;">
+              <div style="font-weight:1000;">Bestellungen</div>
+              <div class="muted" style="margin-top:6px;">Direkt sehen, was offen ist – und von hier aus weiterarbeiten.</div>
+              <div class="divider"></div>
+              <div id="purchaseList"></div>
+            </div>
+
+            <div class="wpanel" id="wtab-docs" style="display:none;">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+                <div>
+                  <div style="font-weight:1000;">Dokumente</div>
+                  <div class="muted" style="margin-top:6px;">Abrufen, öffnen, downloaden. (API später anschließen)</div>
+                </div>
+                <button class="btn-mini primary icon" id="fetchDocsBtn" type="button"><span>↓</span> Abrufen</button>
+              </div>
+              <div class="divider"></div>
+              <div id="docsList"><div class="muted">Noch keine Dokumente geladen.</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="side-surface">
+          <div class="side-head">
+            <h4>Kontext & Aktionen</h4>
+            <button class="btn-mini icon" type="button"><span>📌</span> Pin</button>
+          </div>
+          <div class="side-body">
+            <div class="muted">Quick Actions</div>
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+              <button class="btn-mini primary icon" type="button"><span>✓</span> Auftrag abschließen</button>
+              <button class="btn-mini icon" type="button"><span>↻</span> Status ändern</button>
+              <button class="btn-mini icon" type="button"><span>✉</span> Kundenmail</button>
+            </div>
+            <div class="divider"></div>
+            <div class="muted">Hinweis</div>
+            <div class="muted" style="margin-top:6px;">Scroll läuft nur im Popup (work-content + side-body).</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Page Tabs
+    const pageTabs = Array.from(document.querySelectorAll(".tab"));
+    const pagePanels = Array.from(document.querySelectorAll(".tabpanel"));
+    function setPageTab(name){
+      pageTabs.forEach(t => t.classList.toggle("active", t.dataset.tab === name));
+      pagePanels.forEach(p => p.classList.toggle("active", p.id === "tab-" + name));
+    }
+    pageTabs.forEach(t => t.addEventListener("click", () => setPageTab(t.dataset.tab)));
+
+    // "+ Neu" Dropdown
+    const newBtn = document.getElementById("newBtn");
+    const newMenu = document.getElementById("newMenu");
+    function closeMenu(){ newMenu.classList.remove("open"); newBtn.setAttribute("aria-expanded","false"); }
+    function toggleMenu(){ const open = newMenu.classList.toggle("open"); newBtn.setAttribute("aria-expanded", open ? "true":"false"); }
+    newBtn?.addEventListener("click",(e)=>{ e.stopPropagation(); toggleMenu(); });
+    document.addEventListener("click", closeMenu);
+    document.addEventListener("keydown",(e)=>{ if(e.key==="Escape") closeMenu(); });
+
+    // Demo Data
+    const orders = [
+      {
+        id:"o1", nr:"A-10231", date:"10.01.2026", status:"work", statusLabel:"In Arbeit", amount:"€ 3.200", owner:"Ines",
+        appointment:{ date:"2026-01-12", start:"08:00", end:"11:00", location:"Hauptstr. 17, 87719 Mindelheim", note:"Kunde vor Ort." },
+        technician:{ name:"ines", status:"assigned", note:"Montage + Check." },
+        warehouseEvents:[
+          { type:"incoming", date:"2026-01-09", details:"Wareneingang: 3 Paletten, Spedition XY." },
+          { type:"outgoing", date:"2026-01-10", details:"Warenausgang: 2 Paletten auf Tour." }
+        ],
+        purchases:[{nr:"B-88910",status:"In Versand",tone:"warn"},{nr:"B-88872",status:"Kommissioniert",tone:"warn"}],
+        docs:[{type:"PDF",name:"Auftragsbestätigung",info:"AB-10231.pdf · 220 KB"},{type:"PDF",name:"Lieferschein",info:"LS-88910.pdf · 180 KB"},{type:"PDF",name:"Rechnung",info:"RE-10231.pdf · 310 KB"}]
+      },
+      {
+        id:"o2", nr:"A-10218", date:"03.01.2026", status:"late", statusLabel:"Überfällig", amount:"€ 1.450", owner:"Micha",
+        appointment:{ date:"2026-01-06", start:"10:00", end:"12:00", location:"—", note:"Termin neu abstimmen." },
+        technician:{ name:"micha", status:"planned", note:"Wartet auf Material." },
+        warehouseEvents:[
+          { type:"delay", date:"2026-01-04", details:"Lieferverzögerung: +3 Tage." },
+          { type:"damage", date:"2026-01-05", details:"Schaden: Karton eingedrückt." }
+        ],
+        purchases:[{nr:"B-88710",status:"Offen",tone:"bad"}],
+        docs:[{type:"PDF",name:"Lieferschein",info:"LS-88710.pdf · 170 KB"}]
+      },
+      { id:"o3", nr:"A-10197", date:"15.12.2025", status:"done", statusLabel:"Erledigt", amount:"€ 980", owner:"Rahel",
+        appointment:{ date:"2025-12-18", start:"09:00", end:"10:00", location:"—", note:"Erledigt." },
+        technician:{ name:"rahel", status:"done", note:"Abnahme ok." },
+        warehouseEvents:[{ type:"incoming", date:"2025-12-12", details:"Wareneingang vollständig." }],
+        purchases:[{nr:"B-88642",status:"Abgeschlossen",tone:"good"}],
+        docs:[{type:"PDF",name:"Rechnung",info:"RE-10197.pdf · 290 KB"}]
+      },
+      { id:"o4", nr:"A-10188", date:"01.12.2025", status:"open", statusLabel:"Offen", amount:"€ 2.100", owner:"Ines",
+        appointment:{}, technician:{}, warehouseEvents:[],
+        purchases:[{nr:"B-88511",status:"Offen",tone:"bad"},{nr:"B-88512",status:"Offen",tone:"bad"}],
+        docs:[]
+      },
+      { id:"o5", nr:"A-10170", date:"18.11.2025", status:"work", statusLabel:"In Arbeit", amount:"€ 640", owner:"Micha",
+        appointment:{ date:"2025-11-20", start:"13:00", end:"15:00", location:"—", note:"" },
+        technician:{ name:"micha", status:"assigned", note:"" },
+        warehouseEvents:[{ type:"outgoing", date:"2025-11-19", details:"Warenausgang: 1 Paket." }],
+        purchases:[{nr:"B-88400",status:"In Versand",tone:"warn"}],
+        docs:[{type:"PDF",name:"Auftragsbestätigung",info:"AB-10170.pdf · 210 KB"}]
+      },
+      { id:"o6", nr:"A-10112", date:"22.10.2025", status:"done", statusLabel:"Erledigt", amount:"€ 4.900", owner:"Rahel",
+        appointment:{ date:"2025-10-28", start:"08:30", end:"12:00", location:"—", note:"" },
+        technician:{ name:"rahel", status:"done", note:"" },
+        warehouseEvents:[{ type:"incoming", date:"2025-10-20", details:"Wareneingang: komplett." }],
+        purchases:[{nr:"B-88110",status:"Abgeschlossen",tone:"good"}],
+        docs:[{type:"PDF",name:"Rechnung",info:"RE-10112.pdf · 420 KB"}]
+      }
+    ];
+
+    function badgeClass(status){
+      if (status === "done") return "good";
+      if (status === "late") return "bad";
+      if (status === "work") return "warn";
+      return "";
+    }
+    function purchaseSummary(purchases){
+      if (!purchases || purchases.length === 0) return { label:"—", tone:"" };
+      const tones = purchases.map(p => p.tone);
+      if (tones.includes("bad")) return { label:`${purchases.length} · offen`, tone:"bad" };
+      if (tones.includes("warn")) return { label:`${purchases.length} · in Arbeit`, tone:"warn" };
+      return { label:`${purchases.length} · ok`, tone:"good" };
+    }
+    function warehouseLabel(type){
+      switch(type){
+        case "incoming": return { t:"Wareneingang", icon:"WE" };
+        case "outgoing": return { t:"Warenausgang", icon:"WA" };
+        case "delay": return { t:"Lieferverzögerung", icon:"LV" };
+        case "damage": return { t:"Schaden", icon:"SD" };
+        default: return { t:"Info", icon:"I" };
+      }
+    }
+    function pillTone(pillEl, tone, label){
+      pillEl.classList.remove("good","warn","bad");
+      if (tone) pillEl.classList.add(tone);
+      pillEl.innerHTML = `<span class="dot"></span> ${label}`;
+    }
+
+    // Orders table
+    const ORDERS_PER_PAGE = 5;
+    const ordersBody = document.getElementById("ordersBody");
+    const ordersInfo = document.getElementById("ordersInfo");
+    const searchOrders = document.getElementById("searchOrders");
+    const statusFilter = document.getElementById("statusFilter");
+    const prevBtn = document.getElementById("prevPage");
+    const nextBtn = document.getElementById("nextPage");
+    const page1Btn = document.getElementById("page1");
+    const page2Btn = document.getElementById("page2");
+    const countOrders = document.getElementById("countOrders");
+    let currentPage = 1;
+
+    function applyFilters(list){
+      const q = (searchOrders.value || "").trim().toLowerCase();
+      const st = statusFilter.value;
+      return list.filter(o => {
+        const purchaseSum = purchaseSummary(o.purchases).label.toLowerCase();
+        const matchesQ =
+          !q ||
+          o.nr.toLowerCase().includes(q) ||
+          o.statusLabel.toLowerCase().includes(q) ||
+          o.amount.toLowerCase().includes(q) ||
+          o.owner.toLowerCase().includes(q) ||
+          purchaseSum.includes(q);
+        const matchesSt = (st === "all") ? true : (o.status === st);
+        return matchesQ && matchesSt;
+      });
+    }
+
+    function renderOrders(){
+      countOrders.textContent = String(orders.length);
+      const filtered = applyFilters(orders);
+      const total = filtered.length;
+      const totalPages = Math.max(1, Math.ceil(total / ORDERS_PER_PAGE));
+      currentPage = Math.min(currentPage, totalPages);
+
+      const start = (currentPage - 1) * ORDERS_PER_PAGE;
+      const pageItems = filtered.slice(start, start + ORDERS_PER_PAGE);
+
+      ordersBody.innerHTML = pageItems.map(o => {
+        const ps = purchaseSummary(o.purchases);
+        const toneBadge = ps.tone === "good" ? "good" : ps.tone === "warn" ? "warn" : ps.tone === "bad" ? "bad" : "";
+        const docsCount = (o.docs || []).length;
+
+        return `
+          <tr>
+            <td><strong>${o.nr}</strong></td>
+            <td>${o.date}</td>
+            <td><span class="status"><span class="badge ${badgeClass(o.status)}"></span> ${o.statusLabel}</span></td>
+            <td>${o.amount}</td>
+            <td><span class="status"><span class="badge ${toneBadge}"></span> ${ps.label}</span></td>
+            <td>
+              <div class="row-actions">
+                <button class="btn-mini primary icon" type="button" data-open-order="${o.id}">
+                  <span>↗</span> Öffnen
+                </button>
+                <button class="btn-mini icon" type="button" data-open-docs="${o.id}">
+                  <span>📄</span> Docs (${docsCount})
+                </button>
+                <button class="btn-mini" type="button">Bearbeiten</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("") || `
+        <tr><td colspan="6" style="color:#64748b; font-weight:950;">Keine Treffer.</td></tr>
+      `;
+
+      const shownFrom = total ? start + 1 : 0;
+      const shownTo = total ? Math.min(start + ORDERS_PER_PAGE, total) : 0;
+      ordersInfo.textContent = `Zeige ${shownFrom}–${shownTo} von ${total} (Seite ${currentPage}/${totalPages})`;
+
+      page1Btn.style.display = totalPages >= 1 ? "inline-block" : "none";
+      page2Btn.style.display = totalPages >= 2 ? "inline-block" : "none";
+      page1Btn.classList.toggle("active", currentPage === 1);
+      page2Btn.classList.toggle("active", currentPage === 2);
+      prevBtn.disabled = currentPage === 1;
+      nextBtn.disabled = currentPage === totalPages;
+
+      document.querySelectorAll("[data-open-order]").forEach(btn => {
+        btn.addEventListener("click", () => openOrder(btn.dataset.openOrder, { tab: "overview" }));
+      });
+      document.querySelectorAll("[data-open-docs]").forEach(btn => {
+        btn.addEventListener("click", () => openOrder(btn.dataset.openDocs, { tab: "docs", autoFetchDocs:true }));
+      });
+    }
+
+    function setPage(p){ currentPage = p; renderOrders(); }
+    prevBtn.addEventListener("click", () => setPage(Math.max(1, currentPage - 1)));
+    nextBtn.addEventListener("click", () => {
+      const totalPages = Math.max(1, Math.ceil(applyFilters(orders).length / ORDERS_PER_PAGE));
+      setPage(Math.min(totalPages, currentPage + 1));
+    });
+    page1Btn.addEventListener("click", () => setPage(1));
+    page2Btn.addEventListener("click", () => setPage(2));
+    searchOrders.addEventListener("input", () => { currentPage = 1; renderOrders(); });
+    statusFilter.addEventListener("change", () => { currentPage = 1; renderOrders(); });
+
+    // Modal
+    const modal = document.getElementById("orderModal");
+    const closeModalBtn = document.getElementById("closeModal");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalStatusPill = document.getElementById("modalStatusPill");
+    const modalPurchasePill = document.getElementById("modalPurchasePill");
+    const modalAmount = document.getElementById("modalAmount");
+    const ovNr = document.getElementById("ovNr");
+    const ovDate = document.getElementById("ovDate");
+    const ovOwner = document.getElementById("ovOwner");
+    const ovPurchasesCount = document.getElementById("ovPurchasesCount");
+    const apDate = document.getElementById("apDate");
+    const apStart = document.getElementById("apStart");
+    const apEnd = document.getElementById("apEnd");
+    const apLocation = document.getElementById("apLocation");
+    const apNote = document.getElementById("apNote");
+    const techName = document.getElementById("techName");
+    const techStatus = document.getElementById("techStatus");
+    const techNote = document.getElementById("techNote");
+    const whType = document.getElementById("whType");
+    const whDate = document.getElementById("whDate");
+    const whDetails = document.getElementById("whDetails");
+    const addWarehouseEventBtn = document.getElementById("addWarehouseEvent");
+    const warehouseList = document.getElementById("warehouseList");
+    const purchaseList = document.getElementById("purchaseList");
+    const docsList = document.getElementById("docsList");
+    const fetchDocsBtn = document.getElementById("fetchDocsBtn");
+    const workTabs = Array.from(document.querySelectorAll(".work-tab"));
+    const panelsByTab = {
+      overview: document.getElementById("wtab-overview"),
+      appointment: document.getElementById("wtab-appointment"),
+      technician: document.getElementById("wtab-technician"),
+      warehouse: document.getElementById("wtab-warehouse"),
+      purchases: document.getElementById("wtab-purchases"),
+      docs: document.getElementById("wtab-docs")
+    };
+    let currentOrderId = null;
+
+    function openModal(){
+      modal.classList.add("open");
+      modal.setAttribute("aria-hidden","false");
+      document.body.style.overflow = "hidden";
+    }
+    function closeModal(){
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden","true");
+      document.body.style.overflow = "";
+      currentOrderId = null;
+    }
+    closeModalBtn.addEventListener("click", closeModal);
+    modal.addEventListener("click", (e) => { if(e.target === modal) closeModal(); });
+    document.addEventListener("keydown", (e) => { if(e.key==="Escape" && modal.classList.contains("open")) closeModal(); });
+
+    function setWorkTab(name){
+      workTabs.forEach(t => t.classList.toggle("active", t.dataset.wtab === name));
+      Object.entries(panelsByTab).forEach(([k, el]) => { el.style.display = (k === name) ? "block" : "none"; });
+    }
+    workTabs.forEach(t => t.addEventListener("click", () => setWorkTab(t.dataset.wtab)));
+
+    function hydrateAppointment(ap){
+      apDate.value = ap?.date || "";
+      apStart.value = ap?.start || "";
+      apEnd.value = ap?.end || "";
+      apLocation.value = ap?.location || "";
+      apNote.value = ap?.note || "";
+    }
+    function hydrateTechnician(t){
+      techName.value = t?.name || "";
+      techStatus.value = t?.status || "planned";
+      techNote.value = t?.note || "";
+    }
+
+    function renderPurchases(purchases){
+      if (!purchases || purchases.length === 0){
+        purchaseList.innerHTML = `<div class="muted">Keine Bestellungen verknüpft.</div>`;
+        return;
+      }
+      purchaseList.innerHTML = purchases.map(p => `
+        <div class="item-card">
+          <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+            <div class="file">B</div>
+            <div class="item-info" style="min-width:0;">
+              <strong>${p.nr}</strong>
+              <span>Bestellstatus: ${p.status}</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+            <button class="btn-mini primary icon" type="button"><span>↗</span> Öffnen</button>
+            <button class="btn-mini icon" type="button"><span>⚙</span> Status</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderDocs(order, loading=false){
+      if (loading){ docsList.innerHTML = `<div class="muted">Lade Dokumente …</div>`; return; }
+      const docs = order.docs || [];
+      if (docs.length === 0){ docsList.innerHTML = `<div class="muted">Keine Dokumente vorhanden.</div>`; return; }
+      docsList.innerHTML = docs.map(d => `
+        <div class="item-card">
+          <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+            <div class="file">${d.type}</div>
+            <div class="item-info" style="min-width:0;">
+              <strong style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.name}</strong>
+              <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.info}</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+            <button class="btn-mini primary icon" type="button"><span>↓</span> Download</button>
+            <button class="btn-mini icon" type="button"><span>↗</span> Öffnen</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderWarehouse(events){
+      if (!events || events.length === 0){
+        warehouseList.innerHTML = `<div class="muted">Noch keine Lager-Ereignisse.</div>`;
+        return;
+      }
+      const sorted = [...events].sort((a,b) => (b.date||"").localeCompare(a.date||""));
+      warehouseList.innerHTML = sorted.map(ev => {
+        const l = warehouseLabel(ev.type);
+        return `
+          <div class="item-card">
+            <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+              <div class="file">${l.icon}</div>
+              <div class="item-info" style="min-width:0;">
+                <strong>${l.t} · ${ev.date || "—"}</strong>
+                <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ev.details || "—"}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function openOrder(orderId, opts={tab:"overview", autoFetchDocs:false}){
+      const order = orders.find(o => o.id === orderId);
+      if (!order) return;
+      currentOrderId = orderId;
+
+      modalTitle.textContent = `Auftrag ${order.nr}`;
+      ovNr.textContent = order.nr;
+      ovDate.textContent = order.date;
+      ovOwner.textContent = order.owner;
+      ovPurchasesCount.textContent = `${order.purchases?.length || 0}`;
+      modalAmount.textContent = order.amount;
+
+      const statusTone = order.status === "done" ? "good" : order.status === "work" ? "warn" : order.status === "late" ? "bad" : "";
+      pillTone(modalStatusPill, statusTone, order.statusLabel);
+
+      const ps = purchaseSummary(order.purchases);
+      pillTone(modalPurchasePill, ps.tone, `Bestellungen: ${ps.label}`);
+
+      hydrateAppointment(order.appointment);
+      hydrateTechnician(order.technician);
+      renderWarehouse(order.warehouseEvents);
+      renderPurchases(order.purchases);
+      renderDocs(order, false);
+
+      setWorkTab(opts.tab || "overview");
+      openModal();
+
+      if (opts.autoFetchDocs) fetchDocs();
+    }
+
+    function fetchDocs(){
+      const order = orders.find(o => o.id === currentOrderId);
+      if (!order) return;
+      setWorkTab("docs");
+      renderDocs(order, true);
+      setTimeout(() => { renderDocs(order, false); }, 250);
+    }
+    fetchDocsBtn.addEventListener("click", fetchDocs);
+
+    addWarehouseEventBtn.addEventListener("click", () => {
+      const order = orders.find(o => o.id === currentOrderId);
+      if (!order) return;
+      const type = whType.value;
+      const date = whDate.value || "";
+      const details = (whDetails.value || "").trim();
+      if (!date && !details) return;
+      order.warehouseEvents = order.warehouseEvents || [];
+      order.warehouseEvents.push({ type, date, details: details || "—" });
+      whDetails.value = "";
+      renderWarehouse(order.warehouseEvents);
+      setWorkTab("warehouse");
+    });
+
+    renderOrders();
+
+    // Auto-open demo
+    // openOrder("o1");
+  </script>
+</body>
+</html>
